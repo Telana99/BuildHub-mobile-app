@@ -1,12 +1,12 @@
 import { router } from "expo-router";
 import { useState } from "react";
 import {
-    FlatList,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  FlatList,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -69,10 +69,18 @@ export default function UserHome() {
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>ConstructionConnect</Text>
-          <Text style={styles.headerSubtitle}>
-            Find your perfect builder in Sri Lanka
-          </Text>
+          <View>
+            <Text style={styles.headerTitle}>BuildHub</Text>
+            <Text style={styles.headerSubtitle}>
+              Find your perfect builder in Sri Lanka
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={styles.logoutButton}
+            onPress={() => router.replace("/(auth)/login")}
+          >
+            <Text style={styles.logoutText}>Logout</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Search Bar */}
@@ -142,6 +150,9 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   headerTitle: {
     fontSize: 24,
@@ -230,4 +241,13 @@ const styles = StyleSheet.create({
     color: "#ccc",
     marginLeft: 8,
   },
+  logoutButton: {
+    backgroundColor: "white",
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  logoutText: { color: "#666", fontSize: 14 },
 });

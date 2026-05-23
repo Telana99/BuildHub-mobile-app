@@ -1,11 +1,11 @@
 import { router, useLocalSearchParams } from "expo-router";
 import {
-    Linking,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Linking,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -164,6 +164,13 @@ export default function ConstructionDetail() {
 
           {/* Contact */}
           <Text style={styles.sectionTitle}>Contact</Text>
+          <TouchableOpacity
+            style={[styles.contactButton, styles.rateButton]}
+            onPress={() => router.push(`/(user)/rate/${company.id}` as any)}
+          >
+            <Text style={styles.contactButtonText}>⭐ Rate This Company</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity style={styles.contactButton} onPress={handleCall}>
             <Text style={styles.contactButtonText}>
               📞 Call {company.phone}
@@ -255,4 +262,8 @@ const styles = StyleSheet.create({
     borderColor: "#e87722",
   },
   emailButtonText: { color: "#e87722" },
+  rateButton: {
+    backgroundColor: "#333",
+    marginBottom: 12,
+  },
 });

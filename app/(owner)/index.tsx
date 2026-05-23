@@ -30,7 +30,10 @@ export default function OwnerHome() {
               <Text style={styles.greeting}>Welcome back,</Text>
               <Text style={styles.ownerName}>{owner.owner}</Text>
             </View>
-            <TouchableOpacity style={styles.logoutButton}>
+            <TouchableOpacity
+              style={styles.logoutButton}
+              onPress={() => router.push("/(auth)/login" as any)}
+            >
               <Text style={styles.logoutText}>Logout</Text>
             </TouchableOpacity>
           </View>
