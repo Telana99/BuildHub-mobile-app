@@ -9,7 +9,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Test route
+app.use("/api/auth", require("./routes/auth"));
+
 app.get("/", (req, res) => {
   res.json({ message: "ConstructionConnect API is running!" });
 });
@@ -17,6 +18,7 @@ app.get("/", (req, res) => {
 // Connect to MongoDB
 mongoose
   .connect(process.env.MONGO_URI)
+
   .then(() => {
     console.log("✅ MongoDB connected");
     app.listen(process.env.PORT || 5000, () => {
