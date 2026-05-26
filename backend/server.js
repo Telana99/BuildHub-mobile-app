@@ -11,6 +11,7 @@ app.use(express.json());
 
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/constructions", require("./routes/construction"));
+app.use("/api/reviews", require("./routes/review"));
 
 app.get("/", (req, res) => {
   res.json({ message: "ConstructionConnect API is running!" });
