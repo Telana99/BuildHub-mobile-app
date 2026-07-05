@@ -1,19 +1,23 @@
 import { router } from "expo-router";
 import { useState } from "react";
 import {
-    Alert,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
+import { loginUser } from "../../services/authService";
+import { saveAuthData } from "../../services/storage";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     // Validation
     if (!email || !password) {
       Alert.alert("Error", "Please fill in all fields");
@@ -25,10 +29,24 @@ export default function LoginScreen() {
       return;
     }
 
-    if (email.includes("owner")) {
-      router.replace("/(owner)");
-    } else {
-      router.replace("/(user)");
+    try {
+      setLoading(true); // show loading spinner
+
+      const data = await loginUser(email, password);
+
+      // Save token and user to phone storage
+      await saveAuthData(data.token, data.user);
+
+      // Navigate based on role from real data
+      if (data.user.role === "owner") {
+        router.replace("/(owner)");
+      } else {
+        router.replace("/(user)");
+      }
+    } catch (err: any) {
+      Alert.alert("Error", err.message);
+    } finally {
+      setLoading(false); // hide loading spinner
     }
   };
 
@@ -60,8 +78,16 @@ export default function LoginScreen() {
       />
 
       {/* Login Button */}
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>Login</Text>
+      <TouchableOpacity
+        style={[styles.button, loading && { opacity: 0.7 }]}
+        onPress={handleLogin}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator color="white" />
+        ) : (
+          <Text style={styles.buttonText}>Login</Text>
+        )}
       </TouchableOpacity>
 
       {/* Go to Register */}

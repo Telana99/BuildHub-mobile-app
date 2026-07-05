@@ -1,22 +1,26 @@
 import { router } from "expo-router";
 import { useState } from "react";
 import {
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
+import { registerUser } from "../../services/authService";
+import { saveAuthData } from "../../services/storage";
 
 export default function RegisterScreen() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("user");
+  const [loading, setLoading] = useState(false);
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     // Validation
     if (!name || !email || !password) {
       Alert.alert("Error", "Please fill in all fields");
@@ -33,8 +37,23 @@ export default function RegisterScreen() {
       return;
     }
 
-    // Temporary navigation test (we'll replace with real auth later)
-    Alert.alert("Success", "Registered!\nName: " + name + "\nRole: " + role);
+    try {
+      setLoading(true);
+
+      const data = await registerUser(name, email, password, role);
+
+      await saveAuthData(data.token, data.user);
+
+      if (data.user.role === "owner") {
+        router.replace("/(owner)");
+      } else {
+        router.replace("/(user)");
+      }
+    } catch (err: any) {
+      Alert.alert("Error", err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -101,8 +120,16 @@ export default function RegisterScreen() {
       </View>
 
       {/* Register Button */}
-      <TouchableOpacity style={styles.button} onPress={handleRegister}>
-        <Text style={styles.buttonText}>Create Account</Text>
+      <TouchableOpacity
+        style={[styles.button, loading && { opacity: 0.7 }]}
+        onPress={handleRegister}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator color="white" />
+        ) : (
+          <Text style={styles.buttonText}>Create Account</Text>
+        )}
       </TouchableOpacity>
 
       {/* Go to Login */}
