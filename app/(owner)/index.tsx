@@ -1,24 +1,54 @@
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useState } from "react";
 import {
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { getMyConstruction } from "../../services/constructionService";
+import { clearAuthData } from "../../services/storage";
 
 export default function OwnerHome() {
-  // Dummy owner data — will come from real auth later
-  const owner = {
-    name: "Silva Constructions",
-    owner: "Kamal Silva",
-    location: "Colombo",
-    rating: 4.8,
-    reviews: 124,
-    completedProjects: 245,
-    profileViews: 1520,
+  const [construction, setConstruction] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchMyProfile();
+    }, []),
+  );
+
+  const fetchMyProfile = async () => {
+    try {
+      setLoading(true);
+      const data = await getMyConstruction();
+      setConstruction(data);
+    } catch (err: any) {
+      // No profile found → go to setup
+      if (err.message === "No profile found") {
+        router.replace("/(owner)/setup-profile" as any);
+      } else {
+        Alert.alert("Error", err.message);
+      }
+    } finally {
+      setLoading(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color="#e87722" />
+      </View>
+    );
+  }
+
+  if (!construction) return null;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -28,11 +58,14 @@ export default function OwnerHome() {
           <View style={styles.header}>
             <View>
               <Text style={styles.greeting}>Welcome back,</Text>
-              <Text style={styles.ownerName}>{owner.owner}</Text>
+              <Text style={styles.ownerName}>{construction.ownerName}</Text>
             </View>
             <TouchableOpacity
               style={styles.logoutButton}
-              onPress={() => router.push("/(auth)/login" as any)}
+              onPress={async () => {
+                await clearAuthData();
+                router.replace("/(auth)/login");
+              }}
             >
               <Text style={styles.logoutText}>Logout</Text>
             </TouchableOpacity>
@@ -44,10 +77,13 @@ export default function OwnerHome() {
               <Text style={styles.companyLogoText}>🏗️</Text>
             </View>
             <View style={styles.companyInfo}>
-              <Text style={styles.companyName}>{owner.name}</Text>
-              <Text style={styles.companyLocation}>📍 {owner.location}</Text>
+              <Text style={styles.companyName}>{construction.companyName}</Text>
+              <Text style={styles.companyLocation}>
+                📍 {construction.location}
+              </Text>
               <Text style={styles.companyRating}>
-                ⭐ {owner.rating} ({owner.reviews} reviews)
+                ⭐ {construction.averageRating} ({construction.totalReviews}{" "}
+                reviews)
               </Text>
             </View>
           </View>
@@ -56,19 +92,19 @@ export default function OwnerHome() {
           <Text style={styles.sectionTitle}>Your Stats</Text>
           <View style={styles.statsRow}>
             <View style={styles.statBox}>
-              <Text style={styles.statNumber}>{owner.completedProjects}</Text>
+              <Text style={styles.statNumber}>
+                {construction.projects.length}
+              </Text>
               <Text style={styles.statLabel}>Projects</Text>
             </View>
             <View style={styles.statBox}>
-              <Text style={styles.statNumber}>{owner.reviews}</Text>
+              <Text style={styles.statNumber}>{construction.totalReviews}</Text>
               <Text style={styles.statLabel}>Reviews</Text>
             </View>
             <View style={styles.statBox}>
-              <Text style={styles.statNumber}>{owner.profileViews}</Text>
-              <Text style={styles.statLabel}>Profile Views</Text>
-            </View>
-            <View style={styles.statBox}>
-              <Text style={styles.statNumber}>{owner.rating}</Text>
+              <Text style={styles.statNumber}>
+                {construction.averageRating}
+              </Text>
               <Text style={styles.statLabel}>Rating</Text>
             </View>
           </View>
@@ -86,7 +122,12 @@ export default function OwnerHome() {
 
             <TouchableOpacity
               style={styles.actionButton}
-              onPress={() => router.push("/(owner)/edit-profile" as any)}
+              onPress={() =>
+                router.push({
+                  pathname: "/(owner)/edit-profile" as any,
+                  params: { id: construction._id },
+                })
+              }
             >
               <Text style={styles.actionEmoji}>✏️</Text>
               <Text style={styles.actionText}>Edit Profile</Text>
@@ -94,7 +135,12 @@ export default function OwnerHome() {
 
             <TouchableOpacity
               style={styles.actionButton}
-              onPress={() => router.push("/(owner)/reviews" as any)}
+              onPress={() =>
+                router.push({
+                  pathname: "/(owner)/reviews" as any,
+                  params: { id: construction._id },
+                })
+              }
             >
               <Text style={styles.actionEmoji}>⭐</Text>
               <Text style={styles.actionText}>View Reviews</Text>
@@ -111,19 +157,33 @@ export default function OwnerHome() {
 
           {/* Recent Projects */}
           <Text style={styles.sectionTitle}>Recent Projects</Text>
-          <View style={styles.emptyProjects}>
-            <Text style={styles.emptyEmoji}>📂</Text>
-            <Text style={styles.emptyText}>No projects yet</Text>
-            <Text style={styles.emptySubText}>
-              Tap "Add Project" to share your work
-            </Text>
-            <TouchableOpacity
-              style={styles.addButton}
-              onPress={() => router.push("/(owner)/add-project" as any)}
-            >
-              <Text style={styles.addButtonText}>+ Add Your First Project</Text>
-            </TouchableOpacity>
-          </View>
+          {construction.projects.length === 0 ? (
+            <View style={styles.emptyProjects}>
+              <Text style={styles.emptyEmoji}>📂</Text>
+              <Text style={styles.emptyText}>No projects yet</Text>
+              <Text style={styles.emptySubText}>
+                Tap "Add Project" to share your work
+              </Text>
+              <TouchableOpacity
+                style={styles.addButton}
+                onPress={() => router.push("/(owner)/add-project" as any)}
+              >
+                <Text style={styles.addButtonText}>
+                  + Add Your First Project
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            construction.projects.map((project: any, index: number) => (
+              <View key={index} style={styles.projectCard}>
+                <Text style={styles.projectTitle}>{project.title}</Text>
+                <Text style={styles.projectLocation}>
+                  📍 {project.location}
+                </Text>
+                <Text style={styles.projectCategory}>{project.category}</Text>
+              </View>
+            ))
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -132,6 +192,7 @@ export default function OwnerHome() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#f5f5f5" },
+  centered: { flex: 1, alignItems: "center", justifyContent: "center" },
   container: { padding: 20 },
   header: {
     flexDirection: "row",
@@ -234,4 +295,14 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   addButtonText: { color: "white", fontWeight: "600", fontSize: 14 },
+  projectCard: {
+    backgroundColor: "white",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    elevation: 3,
+  },
+  projectTitle: { fontSize: 16, fontWeight: "bold", color: "#333" },
+  projectLocation: { fontSize: 13, color: "#666", marginTop: 4 },
+  projectCategory: { fontSize: 13, color: "#e87722", marginTop: 4 },
 });

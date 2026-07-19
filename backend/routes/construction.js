@@ -14,6 +14,26 @@ router.get("/", async (req, res) => {
   }
 });
 
+// ─────────────────────────────────────────
+// GET OWNER'S OWN CONSTRUCTION PROFILE
+// Thinking: owner checks if they have a profile
+// URL: GET /api/constructions/my-profile
+// IMPORTANT: must be before /:id route
+// ─────────────────────────────────────────
+router.get("/my-profile", auth, async (req, res) => {
+  try {
+    const construction = await Construction.findOne({ owner: req.user.id });
+
+    if (!construction) {
+      return res.status(404).json({ message: "No profile found" });
+    }
+
+    res.json(construction);
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
 // GET CONSTRUCTION BY ID
 router.get("/:id", async (req, res) => {
   try {

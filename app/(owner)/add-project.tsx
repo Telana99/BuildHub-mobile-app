@@ -1,21 +1,38 @@
 import { router } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  addProject,
+  getMyConstruction,
+} from "../../services/constructionService";
 
 export default function AddProject() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
   const [category, setCategory] = useState("house");
+  const [constructionId, setConstructionId] = useState("");
+
+  useEffect(() => {
+    const fetchId = async () => {
+      try {
+        const data = await getMyConstruction();
+        setConstructionId(data._id);
+      } catch (err: any) {
+        Alert.alert("Error", "Could not load your profile");
+      }
+    };
+    fetchId();
+  }, []);
 
   const CATEGORIES = [
     { id: "house", label: "🏠 House" },
@@ -24,16 +41,25 @@ export default function AddProject() {
     { id: "commercial", label: "🏗️ Commercial" },
   ];
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!title || !description || !location) {
       Alert.alert("Error", "Please fill in all fields");
       return;
     }
 
-    // We'll connect to real API later
-    Alert.alert("Success", "Project added successfully!", [
-      { text: "OK", onPress: () => router.back() },
-    ]);
+    try {
+      await addProject(constructionId, {
+        title,
+        description,
+        location,
+        category,
+      });
+      Alert.alert("Success", "Project added successfully!", [
+        { text: "OK", onPress: () => router.back() },
+      ]);
+    } catch (err: any) {
+      Alert.alert("Error", err.message);
+    }
   };
 
   return (

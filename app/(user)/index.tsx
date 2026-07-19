@@ -1,6 +1,8 @@
 import { router } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   FlatList,
   StyleSheet,
   Text,
@@ -9,58 +11,76 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { getAllConstructions } from "../../services/constructionService";
 
 // Temporary fake data — we'll replace with real API data later
-const DUMMY_CONSTRUCTIONS = [
-  {
-    id: "1",
-    name: "Silva Constructions",
-    location: "Colombo",
-    rating: 4.8,
-    reviews: 124,
-    speciality: "Houses & Apartments",
-  },
-  {
-    id: "2",
-    name: "Perera Builders",
-    location: "Kandy",
-    rating: 4.5,
-    reviews: 89,
-    speciality: "Commercial Buildings",
-  },
-  {
-    id: "3",
-    name: "Fernando & Sons",
-    location: "Galle",
-    rating: 4.7,
-    reviews: 203,
-    speciality: "Luxury Villas",
-  },
-  {
-    id: "4",
-    name: "Jayawardena Builders",
-    location: "Negombo",
-    rating: 4.3,
-    reviews: 56,
-    speciality: "Houses & Apartments",
-  },
-  {
-    id: "5",
-    name: "Ranasinghe Construction",
-    location: "Matara",
-    rating: 4.6,
-    reviews: 78,
-    speciality: "Commercial Buildings",
-  },
-];
+// const DUMMY_CONSTRUCTIONS = [
+//   {
+//     id: "1",
+//     name: "Silva Constructions",
+//     location: "Colombo",
+//     rating: 4.8,
+//     reviews: 124,
+//     speciality: "Houses & Apartments",
+//   },
+//   {
+//     id: "2",
+//     name: "Perera Builders",
+//     location: "Kandy",
+//     rating: 4.5,
+//     reviews: 89,
+//     speciality: "Commercial Buildings",
+//   },
+//   {
+//     id: "3",
+//     name: "Fernando & Sons",
+//     location: "Galle",
+//     rating: 4.7,
+//     reviews: 203,
+//     speciality: "Luxury Villas",
+//   },
+//   {
+//     id: "4",
+//     name: "Jayawardena Builders",
+//     location: "Negombo",
+//     rating: 4.3,
+//     reviews: 56,
+//     speciality: "Houses & Apartments",
+//   },
+//   {
+//     id: "5",
+//     name: "Ranasinghe Construction",
+//     location: "Matara",
+//     rating: 4.6,
+//     reviews: 78,
+//     speciality: "Commercial Buildings",
+//   },
+// ];
 
 export default function UserHome() {
   const [search, setSearch] = useState("");
+  const [constructions, setConstructions] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchConstructions();
+  }, []);
+
+  const fetchConstructions = async () => {
+    try {
+      const data = await getAllConstructions();
+      setConstructions(data);
+    } catch (err: any) {
+      Alert.alert("Error", err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Filter constructions based on search
-  const filtered = DUMMY_CONSTRUCTIONS.filter(
-    (item) =>
-      item.name.toLowerCase().includes(search.toLowerCase()) ||
+  const filtered = constructions.filter(
+    (item: any) =>
+      item.companyName.toLowerCase().includes(search.toLowerCase()) ||
       item.location.toLowerCase().includes(search.toLowerCase()),
   );
 
@@ -93,47 +113,50 @@ export default function UserHome() {
         />
 
         {/* Results Count */}
-        <Text style={styles.resultsText}>
-          {filtered.length} companies found
-        </Text>
-
-        {/* Construction List */}
-        <FlatList
-          data={filtered}
-          keyExtractor={(item) => item.id}
-          showsVerticalScrollIndicator={false}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.card}
-              onPress={() =>
-                router.push(`/(user)/construction/${item.id}` as any)
-              }
-            >
-              {/* Image Placeholder */}
-              <View style={styles.imagePlaceholder}>
-                <Text style={styles.imagePlaceholderText}>🏗️</Text>
-              </View>
-
-              {/* Card Content */}
-              <View style={styles.cardContent}>
-                <Text style={styles.cardName}>{item.name}</Text>
-                <Text style={styles.cardLocation}>📍 {item.location}</Text>
-                <Text style={styles.cardSpeciality}>{item.speciality}</Text>
-
-                {/* Rating */}
-                <View style={styles.ratingRow}>
-                  <Text style={styles.ratingText}>⭐ {item.rating}</Text>
-                  <Text style={styles.reviewText}>
-                    ({item.reviews} reviews)
-                  </Text>
-                </View>
-              </View>
-
-              {/* Arrow */}
-              <Text style={styles.arrow}>›</Text>
-            </TouchableOpacity>
-          )}
-        />
+        {loading ? (
+          <ActivityIndicator
+            size="large"
+            color="#e87722"
+            style={{ marginTop: 40 }}
+          />
+        ) : (
+          <>
+            <Text style={styles.resultsText}>
+              {filtered.length} companies found
+            </Text>
+            <FlatList
+              data={filtered}
+              keyExtractor={(item: any) => item._id}
+              showsVerticalScrollIndicator={false}
+              renderItem={({ item }: any) => (
+                <TouchableOpacity
+                  style={styles.card}
+                  onPress={() =>
+                    router.push(`/(user)/construction/${item._id}` as any)
+                  }
+                >
+                  <View style={styles.imagePlaceholder}>
+                    <Text style={styles.imagePlaceholderText}>🏗️</Text>
+                  </View>
+                  <View style={styles.cardContent}>
+                    <Text style={styles.cardName}>{item.companyName}</Text>
+                    <Text style={styles.cardLocation}>📍 {item.location}</Text>
+                    <Text style={styles.cardSpeciality}>{item.speciality}</Text>
+                    <View style={styles.ratingRow}>
+                      <Text style={styles.ratingText}>
+                        ⭐ {item.averageRating}
+                      </Text>
+                      <Text style={styles.reviewText}>
+                        ({item.totalReviews} reviews)
+                      </Text>
+                    </View>
+                  </View>
+                  <Text style={styles.arrow}>›</Text>
+                </TouchableOpacity>
+              )}
+            />
+          </>
+        )}
       </View>
     </SafeAreaView>
   );
